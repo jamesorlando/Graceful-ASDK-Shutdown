@@ -1,0 +1,73 @@
+#Set your ASDK Resource Group Name
+$ASDKRG = ""
+
+#Set your ASDK VM Name
+$ASDKVM = ""
+
+#Enter the name of your Automation Account Connection Name - The AzureServicePrincipal/App Registration you previously created
+$ConnectionName = ""
+
+#Enter the name of your Storage Account w/ the Stop-AzureStack ps1
+$SAName = ""
+
+#Enter the Storage Account Access Key
+$SAKey = ""
+
+
+
+#Get the Connection from your Automation Account
+$SPConnection = Get-AutomationConnection -Name $ConnectionName
+
+#Create a function to call when we are ready to stop/deallocate your ASDK VM
+function PowerOff-VM {
+Get-AzVM -ResourceGroupName $ASDKRG -Name $ASDKVM | Stop-AzVM -Force
+}
+
+#Create a function to get the state of your ASDK VM
+Function Get-PowerState{
+$VM = Get-AzVM -ResourceGroupName $ASDKRG -Name $ASDKVM -Status
+$global:PowerState = ((($vm.Statuses | ? {$_.Code -like "PowerState*"}).Code).Split('/'))[1]
+}
+
+function Graceful-ASDKShutdown{
+$scriptname = "stopazurestack.ps1"
+$cloudadminpassword = (Get-AutomationPSCredential -Name CloudAdmin).Password
+$context = New-AzStorageContext -StorageAccountName $SAName -StorageAccountKey $SAKey
+Get-AzStorageBlobContent -Container "2108" -blob $scriptname -context $context -Destination $env:temp -Force 
+Invoke-AzVMRunCommand -ResourceGroupName $ASDKRG -VMName $ASDKVM -CommandId 'RunPowerShellScript' -ScriptPath "$env:temp\$scriptname" -Parameter @{CloudAdminPassword = $cloudadminpassword}
+}
+
+Connect-AzAccount `
+-Environment "AzureUSGovernment" `
+-ServicePrincipal `
+-Tenantid $SPConnection.Tenantid `
+-ApplicationID $SPConnection.ApplicationID `
+-CertificateThumbprint $SPConnection.CertificateThumbprint
+
+Get-PowerState
+Switch ($PowerState)
+        {
+            "Running" {Graceful-ASDKShutdown}
+            "Starting" {
+            Do{
+                Start-Sleep -Seconds 180
+                Get-PowerState
+              } until ($PowerState -ne "Starting")
+              Start-Sleep -Seconds 3600
+              Graceful-ASDKShutdown
+            }
+            "Stopping" {
+            DO{
+                Start-Sleep -Seconds 180
+                Get-PowerState
+              } Until ($PowerState -ne "Stopping")
+              if($PowerState -eq "Stopped"){PowerOff-VM}
+            }
+            "Stopped" {PowerOff-VM}
+            "Deallocating" {Write-Host "Machine is already deallocating"}
+            "Deallocated" {Write-Host "Machine is already deallocated"}
+        }
+
+
+
+
