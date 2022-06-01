@@ -19,6 +19,6 @@ c.	Password: YourPassword
 a.	Type: PowerShell 
 b.	Version: 5.1
 9.	Edit the runbook and copy/paste the “AutomationRunbookScript”
-10.	Set the 6 variables at the top of the script
+10.	Set the 7 variables at the top of the script
 11.	Test and/or Publish the Runbook
 12.	Set/Add your schedule. I set mine to run every time I start my ASDK. I immediately determine when I want this to run (usually leave it on a day or two depending on what I am doing). Alternatively, you could set it to run Every Friday to ensure that if you start your ASDK during the week it will shut down by the weekend.
