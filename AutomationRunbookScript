@@ -13,7 +13,10 @@ $SAName = ""
 #Enter the Storage Account Access Key
 $SAKey = ""
 
+#Enter the Cloud Admin Credential Name
+$CloudadminCred = "CloudAdmin"
 
+#### End of Variables
 
 #Get the Connection from your Automation Account
 $SPConnection = Get-AutomationConnection -Name $ConnectionName
@@ -31,7 +34,7 @@ $global:PowerState = ((($vm.Statuses | ? {$_.Code -like "PowerState*"}).Code).Sp
 
 function Graceful-ASDKShutdown{
 $scriptname = "stopazurestack.ps1"
-$cloudadminpassword = (Get-AutomationPSCredential -Name CloudAdmin).Password
+$cloudadminpassword = (Get-AutomationPSCredential -Name $CloudAdminCred).Password
 $context = New-AzStorageContext -StorageAccountName $SAName -StorageAccountKey $SAKey
 Get-AzStorageBlobContent -Container "2108" -blob $scriptname -context $context -Destination $env:temp -Force 
 Invoke-AzVMRunCommand -ResourceGroupName $ASDKRG -VMName $ASDKVM -CommandId 'RunPowerShellScript' -ScriptPath "$env:temp\$scriptname" -Parameter @{CloudAdminPassword = $cloudadminpassword}
