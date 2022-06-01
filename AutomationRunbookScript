@@ -10,6 +10,9 @@ $ConnectionName = ""
 #Enter the name of your Storage Account w/ the Stop-AzureStack ps1
 $SAName = ""
 
+#Enter the name of your SA Container
+$Container = "2108"
+
 #Enter the Storage Account Access Key
 $SAKey = ""
 
@@ -36,7 +39,7 @@ function Graceful-ASDKShutdown{
 $scriptname = "stopazurestack.ps1"
 $cloudadminpassword = (Get-AutomationPSCredential -Name $CloudAdminCred).Password
 $context = New-AzStorageContext -StorageAccountName $SAName -StorageAccountKey $SAKey
-Get-AzStorageBlobContent -Container "2108" -blob $scriptname -context $context -Destination $env:temp -Force 
+Get-AzStorageBlobContent -Container $Container -blob $scriptname -context $context -Destination $env:temp -Force 
 Invoke-AzVMRunCommand -ResourceGroupName $ASDKRG -VMName $ASDKVM -CommandId 'RunPowerShellScript' -ScriptPath "$env:temp\$scriptname" -Parameter @{CloudAdminPassword = $cloudadminpassword}
 }
 
