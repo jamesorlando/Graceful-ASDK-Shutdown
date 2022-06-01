@@ -65,6 +65,8 @@ Switch ($PowerState)
               } until ($PowerState -ne "Starting")
               Start-Sleep -Seconds 3600
               Graceful-ASDKShutdown
+              Start-Sleep -Seconds 360
+              PowerOff-VM
             }
             "Stopping" {
             DO{
