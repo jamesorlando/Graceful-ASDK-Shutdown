@@ -11,13 +11,13 @@ $ConnectionName = ""
 $SAName = ""
 
 #Enter the name of your SA Container
-$Container = "2108"
+$Container = ""
 
 #Enter the Storage Account Access Key
 $SAKey = ""
 
 #Enter the Cloud Admin Credential Name
-$CloudadminCred = "CloudAdmin"
+$CloudadminCred = ""
 
 #### End of Variables
 
@@ -53,7 +53,11 @@ Connect-AzAccount `
 Get-PowerState
 Switch ($PowerState)
         {
-            "Running" {Graceful-ASDKShutdown}
+            "Running" {
+                Graceful-ASDKShutdown
+                Start-Sleep -Seconds 360
+                PowerOff-VM
+                }
             "Starting" {
             Do{
                 Start-Sleep -Seconds 180
@@ -73,7 +77,3 @@ Switch ($PowerState)
             "Deallocating" {Write-Host "Machine is already deallocating"}
             "Deallocated" {Write-Host "Machine is already deallocated"}
         }
-
-
-
-
